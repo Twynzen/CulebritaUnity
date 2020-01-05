@@ -8,9 +8,24 @@ public class Culebra : MonoBehaviour
    public GameObject Escenario;
    public int Ancho, Alto;
 
+    //queue es una lista que elmina númeross de acuerdo al orden de entrada
+   private Queue<GameObject> cuerpo = new Queue<GameObject>();
+   private GameObject cabeza;
+   
+   private Vector3 direccion = Vector3.right;
+
    private void Awake(){
 
        CrearMuros();
+       int posicionIncialX = Ancho/2;
+       int posicionIncialY = Alto/2;
+       NuevoBloque(posicionIncialX, posicionIncialY);
+
+   }
+
+   private void NuevoBloque (float x, float y){
+
+       GameObject nuevo = Instantiate(Bloque, new Vector3(x, y), Quaternion.identity, this.transform);
 
    }
 
@@ -32,5 +47,17 @@ public class Culebra : MonoBehaviour
 
        }
 
+   }
+
+   private void Update(){
+       
+       float horizontal = Input.GetAxisRaw("Horizontal");
+       float vertical = Input.GetAxisRaw("Vertical");
+       Vector3 direccionSeleccionada = new Vector3(horizontal, vertical);
+
+       if(direccionSeleccionada != Vector3.zero){
+
+           direccion = direccionSeleccionada;
+       }
    }
 }
