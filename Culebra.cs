@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+
 
 public class Culebra : MonoBehaviour
 {
@@ -15,8 +17,19 @@ public class Culebra : MonoBehaviour
    //ira siempre a a la derecha en primera instancia
    private Vector3 direccion = Vector3.right;
 
+   //creamos una casilla que permita  definit si un tipo de dato esta vacio o con un obstaculo
+   private enum TipoCasilla{
+
+       Vacio, Obstaculo
+   }
+
+    //Creamos un array bidimincional separando con coma 
+   private TipoCasilla[,] mapa;
+
    private void Awake(){
 
+       //creamos el array que tendrá las posiciones que queremos darle colisión
+       mapa = new TipoCasilla[Ancho, Alto]; 
        CrearMuros();
        int posicionIncialX = Ancho/2;
        int posicionIncialY = Alto/2;
@@ -32,6 +45,17 @@ public class Culebra : MonoBehaviour
        StartCoroutine(Movimiento());
     
    }
+    //obtenemos la casilla de mapa que colisione
+   private TipoCasilla ObtenerMapa(Vector3 posicion){
+
+       return mapa[Mathf.RoundToInt(posicion.x), Mathf.RoundToInt(posicion.y)];
+   }
+
+   private void EstablecerMapa(Vector3 posicion, TipoCasilla valor){
+
+       mapa[Mathf.RoundToInt(posicion.x), Mathf.RoundToInt(posicion.y)] = valor;
+
+   }
 
 
     //Esto es una corrutina
@@ -43,16 +67,36 @@ public class Culebra : MonoBehaviour
        {
            //calculamos la nueva posicion del objeto donde esta la cola
            Vector3 nuevaPosicion = cabeza.transform.position + direccion;
+        
+           //esta variable tipocasilla revisa si esta vacia o con obstaculo 
+           TipoCasilla casillaAOcupar = ObtenerMapa(nuevaPosicion);
+           if (casillaAOcupar == TipoCasilla.Obstaculo)
+           {
+               Debug.Log("Muerto!");
+               yield return new WaitForSeconds (5);
+               SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+               yield break;
+           }
+           else
+           {
            /*obtenemos el último elemento o el que más tiempo lleva en la 
            lista de los que componen el cuerpo*/
            GameObject parteCuerpo = cuerpo.Dequeue();
+           //establecemos la posición antes de moverse
+           EstablecerMapa(parteCuerpo.transform.position, TipoCasilla.Vacio);
            parteCuerpo.transform.position =nuevaPosicion;
+           //aquí ponemos pared ya con el obstaculo al haberse movido
+           EstablecerMapa(nuevaPosicion, TipoCasilla.Obstaculo);
 
            cuerpo.Enqueue(parteCuerpo);
 
            cabeza = parteCuerpo;
 
            yield return espera;
+           }
+
+
+          
        }
 
    }
@@ -64,6 +108,8 @@ public class Culebra : MonoBehaviour
        Quaternion.identity, this.transform );
        //Metemos el nuevo bloque con enqueue en cuerpo
        cuerpo.Enqueue(nuevo);
+       //
+       EstablecerMapa(nuevo.transform.position, TipoCasilla.Obstaculo);
        return nuevo;
 
    }
@@ -79,6 +125,8 @@ public class Culebra : MonoBehaviour
 
                 Vector3 posicion = new Vector3(x, y);
                 Instantiate(Bloque, posicion, Quaternion.identity, Escenario.transform);
+                //insertamos la creación de mapa colisionable
+                EstablecerMapa(posicion, TipoCasilla.Obstaculo);
            
              }
 
